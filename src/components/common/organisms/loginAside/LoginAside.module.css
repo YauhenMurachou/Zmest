@@ -20,8 +20,9 @@
 .item {
 	display: flex;
 	gap: 0.25rem;
+	align-items: center;
 }
 
 .item svg {
-	fill: var(--red-main);
+	fill: var(--blue-main);
 }

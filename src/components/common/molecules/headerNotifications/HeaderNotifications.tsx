@@ -4,7 +4,7 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import NotificationsOffOutlinedIcon from '@mui/icons-material/NotificationsOffOutlined';
 import { Tooltip } from '@mui/material';
 import classNames from 'classnames';
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ChangeLanguage from 'src/components/common/molecules/changeLanguage/ChangeLanguage';
@@ -15,17 +15,17 @@ const HeaderNotifications: FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isOffNotifications, setIsOffNotifications] = useState(false);
 
-  useEffect(() => {
-    const isMuted = JSON.parse(localStorage.getItem('isMuted') || '[]');
-    setIsMuted(isMuted);
-  }, [isMuted]);
+  // useEffect(() => {
+  //   const isMuted = JSON.parse(localStorage.getItem('isMuted') || '[]');
+  //   setIsMuted(isMuted);
+  // }, [isMuted]);
 
-  useEffect(() => {
-    const isOffNotifications = JSON.parse(
-      localStorage.getItem('isOffNotifications') || '[]'
-    );
-    setIsOffNotifications(isOffNotifications);
-  }, [isOffNotifications]);
+  // useEffect(() => {
+  //   const isOffNotifications = JSON.parse(
+  //     localStorage.getItem('isOffNotifications') || '[]'
+  //   );
+  //   setIsOffNotifications(isOffNotifications);
+  // }, [isOffNotifications]);
 
   const { t } = useTranslation();
 

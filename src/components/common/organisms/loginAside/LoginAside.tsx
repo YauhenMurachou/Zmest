@@ -20,7 +20,7 @@ const LoginAside: FC = () => {
           </li>
         ))}
       </ul>
-      <Logo color="var(--red-main)" />
+      <Logo color="var(--blue-main)" />
     </aside>
   );
 };

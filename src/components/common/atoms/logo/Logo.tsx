@@ -9,7 +9,7 @@ type Props = { color?: string };
 const Logo: FC<Props> = ({ color }) => (
   <div className={classes.logo} style={{ color }}>
     <Diversity3Icon className={classes.image} fontSize="medium" />
-    <span className={classes.tradeMark}> Побач © 2023</span>
+    <span className={classes.tradeMark}> Pobach © 2023</span>
     <SvgIcon />
   </div>
 );
