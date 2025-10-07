@@ -6,7 +6,7 @@ import classes from './BigLogo.module.css';
 const BigLogo: FC = () => (
   <div className={classes.logo}>
     <Diversity3Icon className={classes.image} fontSize="large" />
-    <span className={classes.near}>Pobach</span>
+    <span className={classes.near}>Zmest</span>
     <Diversity3Icon className={classes.image} fontSize="large" />
   </div>
 );
