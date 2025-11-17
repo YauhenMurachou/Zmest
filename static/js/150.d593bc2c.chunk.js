@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkzmest=self.webpackChunkzmest||[]).push([[150],{7150:function(t,e,n){n.r(e);var u=n(364),s=n(8931),r=n(184);e.default=function(){var t=(0,u.v9)((function(t){return t.auth})),e=t.isAuth,n=t.userId;return e?e?(0,r.jsx)(s.l_,{to:"/Profile/".concat(n)}):(0,r.jsx)(r.Fragment,{}):(0,r.jsx)(s.l_,{to:"/Login"})}}}]);
+//# sourceMappingURL=150.d593bc2c.chunk.js.map
