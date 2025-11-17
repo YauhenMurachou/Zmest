@@ -46,7 +46,7 @@ const Dialogs: FC = () => {
 
   const openDialog = (id: number) => dispatch(dialogOpenedAction({ id }));
 
-  if (!isAuth) {
+  if (!isAuth.isAuth) {
     return <Redirect to="/Login" />;
   }
 

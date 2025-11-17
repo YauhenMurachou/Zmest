@@ -26,7 +26,7 @@ const Settings: FC = () => {
 
   useEffect(() => {
     dispatch(setUserProfileThunkCreator(userId));
-  }, []);
+  }, [dispatch, userId]);
 
   const handleProfileInfoEdit = (formData: EditProfileType) => {
     dispatch(editProfileThunkCreator(formData));

@@ -52,7 +52,7 @@ const Popper: FC<Props> = ({
       }, 6000);
     }
     return () => clearTimeout(timeoutId);
-  }, [isOpen]);
+  }, [handleClose, isOpen]);
 
   const { t } = useTranslation();
   const { name, id } = companion || {};

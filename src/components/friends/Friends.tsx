@@ -30,7 +30,7 @@ const Friends: FC = () => {
   const [companion, setCompanion] = useState<UserType>();
   const { isAuth, isFetching, friends, followingInProgress, pageSize } =
     useSelector((state: RootState) => ({
-      isAuth: state.auth,
+      isAuth: state.auth.isAuth,
       isFetching: state.users.isFetching,
       pageSize: state.users.pageSize,
       friends: state.users.users,
@@ -40,7 +40,7 @@ const Friends: FC = () => {
 
   useEffect(() => {
     getUsers(dispatch, currentPage, 100, undefined, true);
-  }, [dispatch]);
+  }, [currentPage, dispatch]);
 
   const handleDialogOpen = (companion?: UserType) => {
     setDialogOpen(true);

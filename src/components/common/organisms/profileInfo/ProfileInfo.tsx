@@ -60,6 +60,7 @@ const ProfileInfo: FC<Props> = ({ profile }) => {
             </div>
           );
         }
+         return '';
       })}
     </div>
   );
