@@ -1,8 +1,8 @@
 {
   "name": "zmest",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
-  "homepage": "https://yauhenmurachou.github.io/zmest/",
+  "homepage": "https://yauhenmurachou.github.io/zmest",
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
