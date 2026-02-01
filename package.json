@@ -10,6 +10,7 @@
     "@mui/material": "^5.10.0",
     "@redux-devtools/extension": "^3.2.3",
     "@reduxjs/toolkit": "^1.9.2",
+    "@tanstack/react-query": "^5.90.20",
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",
     "@testing-library/user-event": "^12.8.3",
@@ -71,6 +72,7 @@
     ]
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@types/react": "^18.0.20",
     "@types/react-dom": "^18.0.6",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
