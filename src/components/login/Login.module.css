@@ -52,6 +52,18 @@
 	transform: translateY(1px);
 }
 
+.redirect {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	margin-top: 1rem;
+}
+
+.registration {
+	text-transform: uppercase;
+	color: var(--blue-main);
+}
+
 @media (max-width: 1024px) {
 	.login {
 		margin: 6vh 1rem 0 1rem;

@@ -1,4 +1,4 @@
-import { instance, AuthResponse, User } from 'src/api/api';
+import { instance2, AuthResponse, User } from 'src/api/api';
 
 export type RegisterParams = {
   email: string;
@@ -17,7 +17,7 @@ export const authApi = {
    * POST /api/auth/register
    */
   async register(params: RegisterParams): Promise<AuthResponse> {
-    const response = await instance.post<AuthResponse>('/auth/register', params);
+    const response = await instance2.post<AuthResponse>('/auth/register', params);
     // Store token on successful registration
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
@@ -30,7 +30,7 @@ export const authApi = {
    * POST /api/auth/login
    */
   async login(params: LoginParams): Promise<AuthResponse> {
-    const response = await instance.post<AuthResponse>('/auth/login', params);
+    const response = await instance2.post<AuthResponse>('/auth/login', params);
     // Store token on successful login
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
@@ -44,7 +44,7 @@ export const authApi = {
    * Requires: Authorization header with JWT token
    */
   async getCurrentUser(): Promise<User> {
-    const response = await instance.get<User>('/auth/me');
+    const response = await instance2.get<User>('/auth/me');
     return response.data;
   },
 

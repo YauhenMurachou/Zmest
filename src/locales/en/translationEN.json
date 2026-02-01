@@ -58,6 +58,14 @@
     "account": "Don't have an account?",
     "redirect": "You will be redirected to an external service for registration"
   },
+  "register": {
+    "title": "Create account",
+    "username": "Username",
+    "register": "Sign up",
+    "registering": "Creating account...",
+    "haveAccount": "Already have an account?",
+    "error": "Registration failed. Please try again."
+  },
   "aside": {
     "social": "Belarusian social network",
     "friend": " Find and add friends",
@@ -91,8 +99,10 @@
   "validation": {
     "required": "Required field",
     "long": "Too long",
+    "short": "Too short",
     "domain": "Invalid domain name",
-    "email": "Invalid email format"
+    "email": "Invalid email format",
+    "usernameFormat": "Username can only contain letters, numbers, and underscores"
   },
   "popper": {
     "message": "Your message ",

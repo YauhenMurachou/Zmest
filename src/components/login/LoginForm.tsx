@@ -16,6 +16,7 @@ import styles from './Login.module.css';
 
 type Props = {
   onSubmit: (values: LoginType) => void;
+  onSwitchToRegister?: () => void;
 };
 
 const initialValues = {
@@ -25,7 +26,7 @@ const initialValues = {
   captcha: '',
 };
 
-const LoginForm: FC<Props> = ({ onSubmit }) => {
+const LoginForm: FC<Props> = ({ onSubmit, onSwitchToRegister }) => {
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => setShowPassword((show) => !show);
   const handleMouseDownPassword = (e: MouseEvent<HTMLButtonElement>) => {
@@ -112,7 +113,20 @@ const LoginForm: FC<Props> = ({ onSubmit }) => {
                 {t('login.enter')}
               </Button>
             </div>
-            <SignUpRedirect />
+            {onSwitchToRegister ? (
+              <div className={styles.redirect}>
+                <span>{t('login.account')}</span>
+                <Button
+                  variant="text"
+                  onClick={onSwitchToRegister}
+                  className={styles.registration}
+                >
+                  {t('login.registration')}
+                </Button>
+              </div>
+            ) : (
+              <SignUpRedirect />
+            )}
           </Form>
         )}
       </Formik>

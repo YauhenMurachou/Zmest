@@ -1,4 +1,4 @@
-import { instance, Post, PostsResponse } from 'src/api/api';
+import { instance2, Post, PostsResponse } from 'src/api/api';
 
 export type CreatePostParams = {
   title: string;
@@ -22,7 +22,7 @@ export const postsApi = {
    */
   async getPosts(params: GetPostsParams = {}): Promise<PostsResponse> {
     const { limit = 50, offset = 0 } = params;
-    const response = await instance.get<PostsResponse>(
+    const response = await instance2.get<PostsResponse>(
       `/posts?limit=${limit}&offset=${offset}`
     );
     return response.data;
@@ -31,10 +31,11 @@ export const postsApi = {
   /**
    * Get post by ID
    * GET /api/posts/:id
+   * Response format: { post: Post }
    */
   async getPostById(id: number): Promise<Post> {
-    const response = await instance.get<Post>(`/posts/${id}`);
-    return response.data;
+    const response = await instance2.get<{ post: Post }>(`/posts/${id}`);
+    return response.data.post;
   },
 
   /**
@@ -46,7 +47,7 @@ export const postsApi = {
     params: GetPostsParams = {}
   ): Promise<PostsResponse> {
     const { limit = 50, offset = 0 } = params;
-    const response = await instance.get<PostsResponse>(
+    const response = await instance2.get<PostsResponse>(
       `/posts/author/${authorId}?limit=${limit}&offset=${offset}`
     );
     return response.data;
@@ -56,20 +57,22 @@ export const postsApi = {
    * Create a new post
    * POST /api/posts
    * Requires: Authorization header with JWT token
+   * Response format: { post: Post }
    */
   async createPost(params: CreatePostParams): Promise<Post> {
-    const response = await instance.post<Post>('/posts', params);
-    return response.data;
+    const response = await instance2.post<{ post: Post }>('/posts', params);
+    return response.data.post;
   },
 
   /**
    * Update a post
    * PUT /api/posts/:id
    * Requires: Authorization header with JWT token, must be the author
+   * Response format: { post: Post }
    */
   async updatePost(id: number, params: UpdatePostParams): Promise<Post> {
-    const response = await instance.put<Post>(`/posts/${id}`, params);
-    return response.data;
+    const response = await instance2.put<{ post: Post }>(`/posts/${id}`, params);
+    return response.data.post;
   },
 
   /**
@@ -78,6 +81,6 @@ export const postsApi = {
    * Requires: Authorization header with JWT token, must be the author
    */
   async deletePost(id: number): Promise<void> {
-    await instance.delete(`/posts/${id}`);
+    await instance2.delete(`/posts/${id}`);
   },
 };

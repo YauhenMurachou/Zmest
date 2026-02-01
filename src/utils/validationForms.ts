@@ -49,6 +49,22 @@ export const loginValidationSchema = Yup.object().shape({
     .required(t('validation.required') as string),
 });
 
+export const registerValidationSchema = Yup.object().shape({
+  email: Yup.string()
+    .max(100, t('validation.long') as string)
+    .required(t('validation.required') as string)
+    .email(t('validation.email') as string),
+  username: Yup.string()
+    .min(3, t('validation.short') as string || 'Username must be at least 3 characters')
+    .max(30, t('validation.long') as string)
+    .required(t('validation.required') as string)
+    .matches(/^[a-zA-Z0-9_]+$/, t('validation.usernameFormat') as string || 'Username can only contain letters, numbers, and underscores'),
+  password: Yup.string()
+    .min(6, t('validation.short') as string || 'Password must be at least 6 characters')
+    .max(100, t('validation.long') as string)
+    .required(t('validation.required') as string),
+});
+
 export const isProfileFormChanged = <T extends { [key: string]: any }>(
   values: T,
   initialValues: T

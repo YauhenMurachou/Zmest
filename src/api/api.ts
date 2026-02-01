@@ -20,8 +20,8 @@ export const instance2 = axios.create({
   },
 });
 
-// Request interceptor to add JWT token to requests
-instance.interceptors.request.use(
+// Request interceptor to add JWT token to requests for new backend (instance2)
+instance2.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) {
@@ -32,8 +32,8 @@ instance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors
-instance.interceptors.response.use(
+// Response interceptor to handle errors for new backend (instance2)
+instance2.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
