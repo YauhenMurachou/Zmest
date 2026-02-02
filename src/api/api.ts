@@ -18,6 +18,7 @@ export const instance2 = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable cookies if backend uses them for JWT
 });
 
 // Request interceptor to add JWT token to requests for new backend (instance2)
@@ -32,9 +33,29 @@ instance2.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors for new backend (instance2)
+// Response interceptor to handle errors and extract tokens for new backend (instance2)
 instance2.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Extract JWT token from response headers if present
+    // Backend may send token in Authorization header or custom header
+    const authHeader = response.headers['authorization'] || response.headers['Authorization'];
+    const customHeader = response.headers['x-auth-token'] || response.headers['X-Auth-Token'];
+    const token = authHeader || customHeader;
+
+    if (token) {
+      // Remove 'Bearer ' prefix if present
+      const cleanToken = typeof token === 'string' && token.startsWith('Bearer ')
+        ? token.substring(7)
+        : token;
+      if (typeof cleanToken === 'string') {
+        localStorage.setItem('token', cleanToken);
+      }
+    }
+    // Note: If backend uses cookies only, token will be automatically sent with requests
+    // via withCredentials: true, and we don't need to store it in localStorage
+
+    return response;
+  },
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
@@ -45,13 +66,21 @@ instance2.interceptors.response.use(
   }
 );
 
+// Operation Result Object format - all backend responses follow this structure
+export type ApiResponse<T> = {
+  resultCode: ResultCodeEnum;
+  messages: string[];
+  data: T;
+};
+
 // Types for backend responses
 export type ApiError = {
   message: string;
   error?: string;
 };
 
-export type AuthResponse = {
+// Register response data
+export type RegisterResponseData = {
   user: {
     id: number;
     email: string;
@@ -59,13 +88,25 @@ export type AuthResponse = {
     createdAt?: string;
     updatedAt?: string;
   };
-  token: string;
+};
+
+// Login response data
+export type LoginResponseData = {
+  userId: number;
+};
+
+// Get current user response data (note: uses "login" not "username")
+export type CurrentUserData = {
+  id: number;
+  email: string;
+  login: string; // Backend returns "login" not "username"
 };
 
 export type User = {
   id: number;
   email: string;
-  username: string;
+  username?: string; // For compatibility
+  login?: string; // From backend
   createdAt?: string;
   updatedAt?: string;
 };
@@ -80,7 +121,8 @@ export type Post = {
   updatedAt?: string;
 };
 
-export type PostsResponse = {
+// Posts response data
+export type PostsResponseData = {
   posts: Post[];
   total?: number;
 };

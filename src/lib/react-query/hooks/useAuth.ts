@@ -40,6 +40,8 @@ export const useRegister = () => {
 /**
  * Login mutation
  * POST /api/auth/login
+ * Response: { resultCode: 0, messages: [], data: { userId: number } }
+ * Note: Token is extracted from response headers by interceptor
  */
 export const useLogin = () => {
   const queryClient = useQueryClient();
@@ -58,14 +60,16 @@ export const useLogin = () => {
 
 /**
  * Logout mutation
- * Clears token from localStorage
+ * POST /api/auth/logout
+ * Requires: Authentication
+ * Clears token from localStorage and calls backend logout
  */
 export const useLogout = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      authApi.logout();
+      await authApi.logout();
     },
     onSuccess: () => {
       // Clear all queries on logout
