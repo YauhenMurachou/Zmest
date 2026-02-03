@@ -44,16 +44,50 @@ const RegisterForm: FC<Props> = ({ onSuccess, onSwitchToLogin }) => {
             await registerMutation.mutateAsync(values);
             onSuccess?.();
           } catch (error: unknown) {
+            // Handle errors from the new backend format
             if (error && typeof error === 'object' && 'response' in error) {
-              const axiosError = error as { response?: { data?: { error?: string; details?: Record<string, string[]> } } };
-              if (axiosError.response?.data?.details) {
-                // Handle validation errors
+              const axiosError = error as {
+                response?: {
+                  data?: {
+                    resultCode?: number;
+                    messages?: string[];
+                    error?: string;
+                    details?: Record<string, string[]>;
+                  };
+                };
+              };
+
+              // Handle Operation Result Object format errors
+              if (axiosError.response?.data?.resultCode === 1) {
+                const messages = axiosError.response.data.messages || [];
+                if (messages.length > 0) {
+                  // Try to map error messages to fields
+                  messages.forEach((message) => {
+                    if (message.toLowerCase().includes('email')) {
+                      setFieldError('email', message);
+                    } else if (message.toLowerCase().includes('username')) {
+                      setFieldError('username', message);
+                    } else if (message.toLowerCase().includes('password')) {
+                      setFieldError('password', message);
+                    } else {
+                      setFieldError('email', message);
+                    }
+                  });
+                }
+              }
+              // Handle validation details if present
+              else if (axiosError.response?.data?.details) {
                 Object.entries(axiosError.response.data.details).forEach(([field, messages]) => {
                   setFieldError(field, messages[0]);
                 });
-              } else if (axiosError.response?.data?.error) {
+              }
+              // Fallback to generic error
+              else if (axiosError.response?.data?.error) {
                 setFieldError('email', axiosError.response.data.error);
               }
+            } else if (error instanceof Error) {
+              // Handle thrown errors from authApi
+              setFieldError('email', error.message);
             }
           }
         }}

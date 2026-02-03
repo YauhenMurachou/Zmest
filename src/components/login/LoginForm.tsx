@@ -125,7 +125,7 @@ const LoginForm: FC<Props> = ({ onSubmit, onSwitchToRegister }) => {
                 </Button>
               </div>
             ) : (
-              <SignUpRedirect />
+            <SignUpRedirect />
             )}
           </Form>
         )}
