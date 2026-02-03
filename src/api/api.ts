@@ -1,7 +1,12 @@
 import axios, { AxiosError } from 'axios';
 
 // Backend API base URL - update this to match your deployed backend
-const BACKEND_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+// In development, use relative path to leverage proxy (avoids CORS)
+// In production, use full URL
+const BACKEND_URL =
+  process.env.NODE_ENV === 'development'
+    ? '' // Use relative path in development (proxy will handle it)
+    : process.env.REACT_APP_API_URL || 'http://localhost:3000';
 export enum ResultCodeEnum {
   Success = 0,
   Error = 1,
@@ -14,12 +19,16 @@ export const instance = axios.create({
 });
 
 export const instance2 = axios.create({
-  baseURL: `${BACKEND_URL}/api`,
+  baseURL: BACKEND_URL ? `${BACKEND_URL}/api` : '/api', // Use relative path in dev (proxy), full URL in prod
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Enable cookies if backend uses them for JWT
 });
+
+// Log the configured backend URL for debugging
+const apiBaseUrl = `${BACKEND_URL}/api`.replace(/\/\/api$/, '/api'); // Handle empty BACKEND_URL case
+console.log('Backend API URL configured:', apiBaseUrl || '/api (using proxy)');
 
 // Request interceptor to add JWT token to requests for new backend (instance2)
 instance2.interceptors.request.use(
@@ -27,6 +36,15 @@ instance2.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Log request URL for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Request:', {
+        method: config.method?.toUpperCase(),
+        url: `${config.baseURL}${config.url}`,
+        fullUrl: config.url,
+        baseURL: config.baseURL,
+      });
     }
     return config;
   },
@@ -57,6 +75,17 @@ instance2.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
+    // Log error details for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        fullUrl: `${error.config?.baseURL}${error.config?.url}`,
+        data: error.response?.data,
+      });
+    }
     if (error.response?.status === 401) {
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem('token');

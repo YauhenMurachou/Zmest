@@ -28,14 +28,30 @@ export const authApi = {
    * Note: Token is extracted from response headers by interceptor
    */
   async register(params: RegisterParams): Promise<RegisterResponseData> {
-    const response = await instance2.post<ApiResponse<RegisterResponseData>>(
-      '/auth/register',
-      params
-    );
-    if (response.data.resultCode !== ResultCodeEnum.Success) {
-      throw new Error(response.data.messages[0] || 'Registration failed');
+    try {
+      const response = await instance2.post<ApiResponse<RegisterResponseData>>(
+        '/auth/register',
+        params
+      );
+      if (response.data.resultCode !== ResultCodeEnum.Success) {
+        throw new Error(response.data.messages[0] || 'Registration failed');
+      }
+      return response.data.data;
+    } catch (error) {
+      // Log the full error for debugging
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number; statusText?: string; data?: unknown; config?: { url?: string; baseURL?: string } } };
+        console.error('Registration error:', {
+          status: axiosError.response?.status,
+          statusText: axiosError.response?.statusText,
+          url: axiosError.response?.config?.url,
+          baseURL: axiosError.response?.config?.baseURL,
+          fullUrl: `${axiosError.response?.config?.baseURL}${axiosError.response?.config?.url}`,
+          data: axiosError.response?.data,
+        });
+      }
+      throw error;
     }
-    return response.data.data;
   },
 
   /**

@@ -16,7 +16,7 @@ root.render(
   <HashRouter>
     <Provider store={store}>
       <QueryProvider>
-        <App />
+      <App />
       </QueryProvider>
     </Provider>
   </HashRouter>
