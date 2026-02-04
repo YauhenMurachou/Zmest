@@ -28,30 +28,17 @@ export const authApi = {
    * Note: Token is extracted from response headers by interceptor
    */
   async register(params: RegisterParams): Promise<RegisterResponseData> {
-    try {
-      const response = await instance2.post<ApiResponse<RegisterResponseData>>(
-        '/auth/register',
-        params
-      );
-      if (response.data.resultCode !== ResultCodeEnum.Success) {
-        throw new Error(response.data.messages[0] || 'Registration failed');
-      }
-      return response.data.data;
-    } catch (error) {
-      // Log the full error for debugging
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; statusText?: string; data?: unknown; config?: { url?: string; baseURL?: string } } };
-        console.error('Registration error:', {
-          status: axiosError.response?.status,
-          statusText: axiosError.response?.statusText,
-          url: axiosError.response?.config?.url,
-          baseURL: axiosError.response?.config?.baseURL,
-          fullUrl: `${axiosError.response?.config?.baseURL}${axiosError.response?.config?.url}`,
-          data: axiosError.response?.data,
-        });
-      }
-      throw error;
+    const response = await instance2.post<ApiResponse<RegisterResponseData>>(
+      '/auth/register',
+      params
+    );
+
+    if (response.data.resultCode !== ResultCodeEnum.Success) {
+      const errorMessage = response.data.messages[0] || 'Registration failed';
+      throw new Error(errorMessage);
     }
+
+    return response.data.data;
   },
 
   /**
@@ -65,9 +52,12 @@ export const authApi = {
       '/auth/login',
       params
     );
+
     if (response.data.resultCode !== ResultCodeEnum.Success) {
-      throw new Error(response.data.messages[0] || 'Login failed');
+      const errorMessage = response.data.messages[0] || 'Login failed';
+      throw new Error(errorMessage);
     }
+
     return response.data.data;
   },
 
@@ -95,15 +85,17 @@ export const authApi = {
    */
   async getCurrentUser(): Promise<User> {
     const response = await instance2.get<ApiResponse<CurrentUserData>>('/auth/me');
+
     if (response.data.resultCode !== ResultCodeEnum.Success) {
-      throw new Error(response.data.messages[0] || 'Failed to get user');
+      const errorMessage = response.data.messages[0] || 'Failed to get user';
+      throw new Error(errorMessage);
     }
-    // Convert backend format (login) to User format (username)
+
     const userData = response.data.data;
     return {
       id: userData.id,
       email: userData.email,
-      username: userData.login, // Map login to username for compatibility
+      username: userData.login,
       login: userData.login,
     };
   },

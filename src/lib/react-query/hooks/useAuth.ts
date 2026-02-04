@@ -3,35 +3,39 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi, RegisterParams, LoginParams } from 'src/api/authApi';
 import { queryKeys } from 'src/lib/react-query/queryKeys';
 
+const TOKEN_STORAGE_KEY = 'token';
+
+const hasToken = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return !!localStorage.getItem(TOKEN_STORAGE_KEY);
+};
+
 /**
  * Get current authenticated user
  * GET /api/auth/me
+ * Only fetches if token exists in localStorage
  */
 export const useAuth = () =>
   useQuery({
     queryKey: queryKeys.auth.me,
-    queryFn: async () => {
-      const user = await authApi.getCurrentUser();
-      return user;
-    },
+    queryFn: async () => await authApi.getCurrentUser(),
     retry: false,
-    enabled: !!localStorage.getItem('token'), // Only fetch if token exists
+    enabled: () => hasToken(),
   });
 
 /**
  * Register mutation
  * POST /api/auth/register
+ * Token is extracted from response headers by interceptor
  */
 export const useRegister = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: RegisterParams) => {
-      const data = await authApi.register(params);
-      return data;
-    },
+    mutationFn: async (params: RegisterParams) => await authApi.register(params),
     onSuccess: () => {
-      // Invalidate and refetch auth data after successful registration
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
@@ -41,18 +45,14 @@ export const useRegister = () => {
  * Login mutation
  * POST /api/auth/login
  * Response: { resultCode: 0, messages: [], data: { userId: number } }
- * Note: Token is extracted from response headers by interceptor
+ * Token is extracted from response headers by interceptor
  */
 export const useLogin = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: LoginParams) => {
-      const data = await authApi.login(params);
-      return data;
-    },
+    mutationFn: async (params: LoginParams) => await authApi.login(params),
     onSuccess: () => {
-      // Invalidate and refetch auth data after successful login
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.me });
     },
   });
@@ -72,7 +72,6 @@ export const useLogout = () => {
       await authApi.logout();
     },
     onSuccess: () => {
-      // Clear all queries on logout
       queryClient.clear();
     },
   });
