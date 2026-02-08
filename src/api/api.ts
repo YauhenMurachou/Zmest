@@ -129,6 +129,7 @@ export type RegisterResponseData = {
 // Login response data
 export type LoginResponseData = {
   userId: number;
+  token?: string; // JWT token, if backend includes it in body
 };
 
 // Get current user response data (note: uses "login" not "username")

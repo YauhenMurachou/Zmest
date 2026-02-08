@@ -4,8 +4,8 @@ import { CheckboxWithLabel, TextField } from 'formik-mui';
 import { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import PasswordIcon from 'src/components/common/atoms/passwordIcon/PasswordIcon';
 import { ResultCodeEnum } from 'src/api/api';
+import PasswordIcon from 'src/components/common/atoms/passwordIcon/PasswordIcon';
 import { useLogin } from 'src/lib/react-query/hooks';
 import { loginValidationSchema } from 'src/utils/validationForms';
 
@@ -20,7 +20,9 @@ type OperationResultError = {
   };
 };
 
-const isOperationResultError = (error: unknown): error is OperationResultError =>
+const isOperationResultError = (
+  error: unknown
+): error is OperationResultError =>
   error !== null &&
   typeof error === 'object' &&
   'response' in error &&
@@ -62,7 +64,10 @@ const LoginForm: FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
     event.preventDefault();
   };
 
-  const handleSubmit = async (values: LoginFormValues, setFieldError: (field: string, message: string) => void) => {
+  const handleSubmit = async (
+    values: LoginFormValues,
+    setFieldError: (field: string, message: string) => void
+  ) => {
     try {
       await loginMutation.mutateAsync({
         email: values.email,
@@ -80,15 +85,28 @@ const LoginForm: FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
     setFieldError: (field: string, message: string) => void
   ) => {
     if (isOperationResultError(error)) {
-      const errorMessages = error.response?.data?.messages || [];
-      const firstMessage = errorMessages[0] || t('login.error');
+      const messages = error.response?.data?.messages;
+      const errorMessages = Array.isArray(messages) ? messages : [];
+      const firstMessage =
+        (typeof errorMessages[0] === 'string' ? errorMessages[0] : null) ||
+        t('login.error');
 
-      if (errorMessages.some((msg) => msg.toLowerCase().includes('email'))) {
-        setFieldError('email', firstMessage);
-      } else if (errorMessages.some((msg) => msg.toLowerCase().includes('password'))) {
-        setFieldError('password', firstMessage);
+      if (
+        errorMessages.some(
+          (msg) =>
+            typeof msg === 'string' && msg.toLowerCase().includes('email')
+        )
+      ) {
+        setFieldError('email', firstMessage || 'unknown error');
+      } else if (
+        errorMessages.some(
+          (msg) =>
+            typeof msg === 'string' && msg.toLowerCase().includes('password')
+        )
+      ) {
+        setFieldError('password', firstMessage || 'unknown error');
       } else {
-        setFieldError('email', firstMessage);
+        setFieldError('email', firstMessage || 'unknown error');
       }
       return;
     }
@@ -169,7 +187,9 @@ const LoginForm: FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
                 loginMutation.isPending
               }
             >
-              {loginMutation.isPending ? t('login.loggingIn') : t('login.enter')}
+              {loginMutation.isPending
+                ? t('login.loggingIn')
+                : t('login.enter')}
             </Button>
           </div>
           {onSwitchToRegister && (

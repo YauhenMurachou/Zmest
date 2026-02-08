@@ -1,5 +1,8 @@
+import { authApi } from 'src/api/authApi';
 import { profileApi } from 'src/api/profileApi';
 import { usersApi } from 'src/api/usersApi';
+import { queryClient } from 'src/lib/react-query/queryClient';
+import { queryKeys } from 'src/lib/react-query/queryKeys';
 import { CommonActionTypes, CommonThunkType } from 'src/redux/redux-store';
 
 const SET_USER_DATA = 'SET_USER_DATA';
@@ -114,7 +117,9 @@ export const setUserDataThunkCreator =
         dispatch(authActions.setUserDataActionCreator(id, email, login, true));
 
         profileApi.getProfile(id).then((profileData) => {
-          dispatch(authActions.setAvatarActionCreator(profileData.photos.small));
+          dispatch(
+            authActions.setAvatarActionCreator(profileData.photos.small)
+          );
         });
       } else {
         // Token exists but backend says unauthenticated (e.g., expired/invalid token)
@@ -168,19 +173,10 @@ const getCaptchaUrlThunkCreator =
   };
 
 export const logoutDataThunkCreator =
-  (): CommonThunkType<AuthActionsType, void> => (dispatch) => {
-    usersApi.logout().then((data) => {
-      if (data.resultCode === 0) {
-        dispatch(
-          authActions.setUserDataActionCreator(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          )
-        );
-      }
-    });
+  (): CommonThunkType<AuthActionsType, void> => async (dispatch) => {
+    await authApi.logout(); // POST /api/auth/logout (new BE), clears token
+    queryClient.removeQueries({ queryKey: queryKeys.auth.me });
+    dispatch(
+      authActions.setUserDataActionCreator(null, null, null, null, null, null)
+    );
   };
