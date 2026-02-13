@@ -26,6 +26,14 @@ export const instance2 = axios.create({
   withCredentials: true, // Enable cookies if backend uses them for JWT
 });
 
+export const legacyInstanse = axios.create({
+  baseURL: BACKEND_URL ? `/` : '', // Use relative path in dev (proxy), full URL in prod
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // Enable cookies if backend uses them for JWT
+});
+
 // Log the configured backend URL for debugging
 const apiBaseUrl = `${BACKEND_URL}/api`.replace(/\/\/api$/, '/api'); // Handle empty BACKEND_URL case
 console.log('Backend API URL configured:', apiBaseUrl || '/api (using proxy)');
@@ -56,15 +64,18 @@ instance2.interceptors.response.use(
   (response) => {
     // Extract JWT token from response headers if present
     // Backend may send token in Authorization header or custom header
-    const authHeader = response.headers['authorization'] || response.headers['Authorization'];
-    const customHeader = response.headers['x-auth-token'] || response.headers['X-Auth-Token'];
+    const authHeader =
+      response.headers['authorization'] || response.headers['Authorization'];
+    const customHeader =
+      response.headers['x-auth-token'] || response.headers['X-Auth-Token'];
     const token = authHeader || customHeader;
 
     if (token) {
       // Remove 'Bearer ' prefix if present
-      const cleanToken = typeof token === 'string' && token.startsWith('Bearer ')
-        ? token.substring(7)
-        : token;
+      const cleanToken =
+        typeof token === 'string' && token.startsWith('Bearer ')
+          ? token.substring(7)
+          : token;
       if (typeof cleanToken === 'string') {
         localStorage.setItem('token', cleanToken);
       }
@@ -86,11 +97,18 @@ instance2.interceptors.response.use(
         data: error.response?.data,
       });
     }
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
+
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      // Unauthorized - clear token
       localStorage.removeItem('token');
-      window.location.href = '/login';
+
+      // Avoid redirect loop: don't force navigation if already on the login page
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login') {
+        window.location.href = '/login';
+      }
     }
+
     return Promise.reject(error);
   }
 );
@@ -122,6 +140,7 @@ export type RegisterResponseData = {
 // Login response data
 export type LoginResponseData = {
   userId: number;
+  token?: string; // JWT token, if backend includes it in body
 };
 
 // Get current user response data (note: uses "login" not "username")

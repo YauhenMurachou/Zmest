@@ -1,9 +1,9 @@
-import { instance } from 'src/api/api';
+import { instance, legacyInstanse } from 'src/api/api';
 import { EditProfileType } from 'src/types';
 
 export const profileApi = {
   async getProfile(userId: number | null) {
-    const response = await instance.get(`profile/${userId}`);
+    const response = await legacyInstanse.get(`profile/${userId}`);
     return response.data;
   },
 

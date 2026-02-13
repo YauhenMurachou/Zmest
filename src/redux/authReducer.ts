@@ -1,5 +1,8 @@
+import { authApi } from 'src/api/authApi';
 import { profileApi } from 'src/api/profileApi';
 import { usersApi } from 'src/api/usersApi';
+import { queryClient } from 'src/lib/react-query/queryClient';
+import { queryKeys } from 'src/lib/react-query/queryKeys';
 import { CommonActionTypes, CommonThunkType } from 'src/redux/redux-store';
 
 const SET_USER_DATA = 'SET_USER_DATA';
@@ -93,13 +96,47 @@ export const authReducer = (
 
 export const setUserDataThunkCreator =
   (): CommonThunkType<AuthActionsType> => async (dispatch) => {
-    const data = await usersApi.setLogin();
-    if (data.resultCode === 0) {
-      const { id, email, login } = data.data;
-      dispatch(authActions.setUserDataActionCreator(id, email, login, true));
-      profileApi.getProfile(id).then((data) => {
-        dispatch(authActions.setAvatarActionCreator(data.photos.small));
-      });
+    // Only try to fetch current user if JWT token exists
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      // No token → user is not authenticated, but app can still be initialized
+      dispatch(authActions.setUserDataActionCreator(null, null, null, false));
+      return;
+    }
+
+    try {
+      const data = await usersApi.setLogin();
+
+      if (data.resultCode === 0 && data.data) {
+        const { id, email, login } = data.data;
+        dispatch(authActions.setUserDataActionCreator(id, email, login, true));
+
+        profileApi.getProfile(id).then((profileData) => {
+          dispatch(
+            authActions.setAvatarActionCreator(profileData.photos.small)
+          );
+        });
+      } else {
+        // Token exists but backend says unauthenticated (e.g., expired/invalid token)
+        // Clear token and mark user as logged out, but don't break app initialization
+        localStorage.removeItem('token');
+        dispatch(authActions.setUserDataActionCreator(null, null, null, false));
+      }
+    } catch (error) {
+      // Let network errors bubble up so appReducer can show CORSE error,
+      // but don't rethrow 401-style auth issues (they should already be handled by interceptor)
+      if (error instanceof Error && error.message === 'Network Error') {
+        throw error;
+      }
+
+      // For other errors, treat as unauthenticated and continue
+      localStorage.removeItem('token');
+      dispatch(authActions.setUserDataActionCreator(null, null, null, false));
     }
   };
 
@@ -136,19 +173,10 @@ const getCaptchaUrlThunkCreator =
   };
 
 export const logoutDataThunkCreator =
-  (): CommonThunkType<AuthActionsType, void> => (dispatch) => {
-    usersApi.logout().then((data) => {
-      if (data.resultCode === 0) {
-        dispatch(
-          authActions.setUserDataActionCreator(
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          )
-        );
-      }
-    });
+  (): CommonThunkType<AuthActionsType, void> => async (dispatch) => {
+    await authApi.logout(); // POST /api/auth/logout (new BE), clears token
+    queryClient.removeQueries({ queryKey: queryKeys.auth.me });
+    dispatch(
+      authActions.setUserDataActionCreator(null, null, null, null, null, null)
+    );
   };

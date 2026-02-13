@@ -3,134 +3,210 @@ import { Field, Form, Formik } from 'formik';
 import { CheckboxWithLabel, TextField } from 'formik-mui';
 import { FC, MouseEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 
-import Captcha from 'src/components/common/atoms/captcha/Captcha';
+import { ResultCodeEnum } from 'src/api/api';
 import PasswordIcon from 'src/components/common/atoms/passwordIcon/PasswordIcon';
-import SignUpRedirect from 'src/components/common/atoms/signUpRedirect/SignUpRedirect';
-import { LoginType } from 'src/components/login/Login';
-import { RootState } from 'src/redux/redux-store';
+import { useLogin } from 'src/lib/react-query/hooks';
 import { loginValidationSchema } from 'src/utils/validationForms';
 
 import styles from './Login.module.css';
 
-type Props = {
-  onSubmit: (values: LoginType) => void;
+type OperationResultError = {
+  response?: {
+    data?: {
+      resultCode?: number;
+      messages?: string[];
+    };
+  };
+};
+
+const isOperationResultError = (
+  error: unknown
+): error is OperationResultError =>
+  error !== null &&
+  typeof error === 'object' &&
+  'response' in error &&
+  error.response !== null &&
+  typeof error.response === 'object' &&
+  'data' in error.response &&
+  error.response.data !== null &&
+  typeof error.response.data === 'object' &&
+  'resultCode' in error.response.data &&
+  error.response.data.resultCode === ResultCodeEnum.Error;
+
+type LoginFormValues = {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+};
+
+type LoginFormProps = {
+  onSuccess?: () => void;
   onSwitchToRegister?: () => void;
 };
 
-const initialValues = {
+const initialFormValues: LoginFormValues = {
   email: '',
   password: '',
   rememberMe: false,
-  captcha: '',
 };
 
-const LoginForm: FC<Props> = ({ onSubmit, onSwitchToRegister }) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const handleClickShowPassword = () => setShowPassword((show) => !show);
-  const handleMouseDownPassword = (e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-  };
-  const { error, captchaImageUrl } = useSelector(
-    (state: RootState) => state.auth
-  );
+const LoginForm: FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const { t } = useTranslation();
-  const [value, setValue] = useState('');
+  const loginMutation = useLogin();
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible((prev) => !prev);
+  };
+
+  const handlePasswordMouseDown = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+  };
+
+  const handleSubmit = async (
+    values: LoginFormValues,
+    setFieldError: (field: string, message: string) => void
+  ) => {
+    try {
+      await loginMutation.mutateAsync({
+        email: values.email,
+        password: values.password,
+        rememberMe: values.rememberMe,
+      });
+      onSuccess?.();
+    } catch (error) {
+      handleLoginError(error, setFieldError);
+    }
+  };
+
+  const handleLoginError = (
+    error: unknown,
+    setFieldError: (field: string, message: string) => void
+  ) => {
+    if (isOperationResultError(error)) {
+      const messages = error.response?.data?.messages;
+      const errorMessages = Array.isArray(messages) ? messages : [];
+      const firstMessage =
+        (typeof errorMessages[0] === 'string' ? errorMessages[0] : null) ||
+        t('login.error');
+
+      if (
+        errorMessages.some(
+          (msg) =>
+            typeof msg === 'string' && msg.toLowerCase().includes('email')
+        )
+      ) {
+        setFieldError('email', firstMessage || 'unknown error');
+      } else if (
+        errorMessages.some(
+          (msg) =>
+            typeof msg === 'string' && msg.toLowerCase().includes('password')
+        )
+      ) {
+        setFieldError('password', firstMessage || 'unknown error');
+      } else {
+        setFieldError('email', firstMessage || 'unknown error');
+      }
+      return;
+    }
+
+    if (error instanceof Error) {
+      setFieldError('email', error.message);
+      return;
+    }
+
+    setFieldError('email', t('login.error'));
+  };
 
   return (
-    <>
-      <Formik
-        onSubmit={(values) => {
-          onSubmit({ ...values, captcha: value });
-          setValue('');
-        }}
-        initialValues={initialValues}
-        validationSchema={loginValidationSchema}
-      >
-        {({ errors, dirty }) => (
-          <Form>
-            <div className={styles.field}>
-              <Field
-                fullWidth
-                name="email"
-                id="email"
-                label={t('login.email')}
-                placeholder={t('login.email')}
-                component={TextField}
-                disabled={false}
-              />
+    <Formik
+      initialValues={initialFormValues}
+      validationSchema={loginValidationSchema}
+      onSubmit={(values, { setFieldError }) => {
+        handleSubmit(values, setFieldError);
+      }}
+    >
+      {({ errors, dirty, isValid }) => (
+        <Form>
+          <div className={styles.field}>
+            <Field
+              fullWidth
+              name="email"
+              id="email"
+              label={t('login.email')}
+              placeholder={t('login.email')}
+              component={TextField}
+            />
+          </div>
+          <div className={styles.field}>
+            <Field
+              fullWidth
+              name="password"
+              id="password"
+              type={isPasswordVisible ? 'text' : 'password'}
+              label={t('login.password')}
+              placeholder={t('login.password')}
+              component={TextField}
+              InputProps={{
+                endAdornment: (
+                  <PasswordIcon
+                    showPassword={isPasswordVisible}
+                    handleClickShowPassword={togglePasswordVisibility}
+                    handleMouseDownPassword={handlePasswordMouseDown}
+                  />
+                ),
+              }}
+            />
+          </div>
+          {loginMutation.isError && (
+            <div className={styles.error}>
+              {loginMutation.error instanceof Error
+                ? loginMutation.error.message
+                : t('login.error')}
             </div>
-            <div className={styles.field}>
-              <Field
-                fullWidth
-                placeholder={t('login.password')}
-                name="password"
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                label={t('login.password')}
-                component={TextField}
-                disabled={false}
-                InputProps={{
-                  endAdornment: (
-                    <PasswordIcon
-                      showPassword={showPassword}
-                      handleClickShowPassword={handleClickShowPassword}
-                      handleMouseDownPassword={handleMouseDownPassword}
-                    />
-                  ),
-                }}
-              />
-            </div>
-            {captchaImageUrl && (
-              <Captcha
-                captchaImageUrl={captchaImageUrl}
-                value={value}
-                setValue={setValue}
-              />
-            )}
-            {errors && <div className={styles.error}>{error}</div>}
-            <div className={styles.field}>
-              <Field
-                type="checkbox"
-                component={CheckboxWithLabel}
-                name="rememberMe"
-                Label={{ label: t('login.remember') }}
-              />
-            </div>
-            <div className={styles.submit}>
+          )}
+          <div className={styles.field}>
+            <Field
+              type="checkbox"
+              component={CheckboxWithLabel}
+              name="rememberMe"
+              Label={{ label: t('login.remember') }}
+            />
+          </div>
+          <div className={styles.submit}>
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              disabled={
+                !!errors.email ||
+                !!errors.password ||
+                !dirty ||
+                !isValid ||
+                loginMutation.isPending
+              }
+            >
+              {loginMutation.isPending
+                ? t('login.loggingIn')
+                : t('login.enter')}
+            </Button>
+          </div>
+          {onSwitchToRegister && (
+            <div className={styles.redirect}>
+              <span>{t('login.account')}</span>
               <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                disabled={
-                  !!errors.email ||
-                  !!errors.password ||
-                  !dirty ||
-                  (!!captchaImageUrl && !value.trim())
-                }
+                variant="text"
+                onClick={onSwitchToRegister}
+                className={styles.registration}
               >
-                {t('login.enter')}
+                {t('login.registration')}
               </Button>
             </div>
-            {onSwitchToRegister ? (
-              <div className={styles.redirect}>
-                <span>{t('login.account')}</span>
-                <Button
-                  variant="text"
-                  onClick={onSwitchToRegister}
-                  className={styles.registration}
-                >
-                  {t('login.registration')}
-                </Button>
-              </div>
-            ) : (
-            <SignUpRedirect />
-            )}
-          </Form>
-        )}
-      </Formik>
-    </>
+          )}
+        </Form>
+      )}
+    </Formik>
   );
 };
 

@@ -1,49 +1,46 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import LoginAside from 'src/components/common/organisms/loginAside/LoginAside';
 import LoginForm from 'src/components/login/LoginForm';
 import RegisterForm from 'src/components/login/RegisterForm';
 import { useAuth } from 'src/lib/react-query/hooks';
-import { loginDataThunkCreator } from 'src/redux/authReducer';
 import { RootState } from 'src/redux/redux-store';
 
 import styles from './Login.module.css';
 
-export type LoginType = {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-  captcha: string | null;
-};
-
 const Login: FC = () => {
-  const dispatch = useDispatch();
-  const { isAuth: isAuthRedux, userId } = useSelector((state: RootState) => state.auth);
-  const { data: authUser, isSuccess: isAuthNew } = useAuth();
   const { t } = useTranslation();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
 
-  // Check auth from both old Redux and new React Query
-  const isAuth = isAuthRedux || (isAuthNew && !!authUser);
-  const currentUserId = userId || authUser?.id;
-  const profilePath = `/Profile/${currentUserId}`;
+  // Backward compatibility: Check old Redux auth state
+  const { isAuth: isAuthRedux, userId: reduxUserId } = useSelector(
+    (state: RootState) => state.auth
+  );
 
-  const logInFunction = (values: LoginType) => {
-    const { email, password, rememberMe, captcha } = values;
-    // Use old Redux login for backward compatibility
-    dispatch(loginDataThunkCreator(email, password, rememberMe, captcha));
+  // New backend: Check React Query auth state
+  const { data: authUser, isSuccess: isAuthQuerySuccess, refetch: refetchAuth } = useAuth();
+
+  const isAuthenticated = isAuthRedux || (isAuthQuerySuccess && !!authUser);
+  const currentUserId = reduxUserId || authUser?.id;
+  const profilePath = currentUserId ? `/Profile/${currentUserId}` : '/Profile';
+
+  const handleLoginSuccess = () => {
+    // Refetch auth data after successful login to get user info
+    refetchAuth();
   };
 
   const handleRegisterSuccess = () => {
-    // After successful registration, switch to login mode
-    // The user is already logged in via token, so redirect
+    // After successful registration, user is logged in via token
+    // Refetch auth data and switch to login mode
+    refetchAuth();
     setIsRegisterMode(false);
   };
 
-  if (isAuth) {
+  // Redirect if already authenticated
+  if (isAuthenticated) {
     return <Redirect to={profilePath} />;
   }
 
@@ -62,7 +59,7 @@ const Login: FC = () => {
             />
           ) : (
             <LoginForm
-              onSubmit={logInFunction}
+              onSuccess={handleLoginSuccess}
               onSwitchToRegister={() => setIsRegisterMode(true)}
             />
           )}
