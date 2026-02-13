@@ -120,5 +120,16 @@
     "title": "Editing personal information",
     "job": "Are you looking for a job",
     "fullName": "Full name"
+  },
+  "posts": {
+    "newPost": "New post",
+    "title": "Title",
+    "content": "Content",
+    "publish": "Publish",
+    "publishing": "Publishing...",
+    "editPost": "Edit post",
+    "saving": "Saving...",
+    "empty": "No posts yet.",
+    "confirmDelete": "Delete this post?"
   }
 }

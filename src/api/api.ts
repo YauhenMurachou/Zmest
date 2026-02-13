@@ -26,13 +26,45 @@ export const instance2 = axios.create({
   withCredentials: true, // Enable cookies if backend uses them for JWT
 });
 
-export const legacyInstanse = axios.create({
-  baseURL: BACKEND_URL ? `/` : '', // Use relative path in dev (proxy), full URL in prod
+// Same as BACKEND_URL but for prod always full origin (dev uses '' for proxy)
+const LEGACY_BACKEND_ORIGIN =
+  process.env.NODE_ENV === 'development'
+    ? ''
+    : process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
+export const legacyInstance = axios.create({
+  baseURL: LEGACY_BACKEND_ORIGIN,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Enable cookies if backend uses them for JWT
+  withCredentials: true,
 });
+
+// Add JWT to requests for protected routes (profile updates, follow, etc.)
+legacyInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+legacyInstance.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Log the configured backend URL for debugging
 const apiBaseUrl = `${BACKEND_URL}/api`.replace(/\/\/api$/, '/api'); // Handle empty BACKEND_URL case

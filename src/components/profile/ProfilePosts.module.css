@@ -1,0 +1,77 @@
+.section {
+  padding: 1.25rem 0;
+  border-top: 1px solid var(--border-light, #e8e8e8);
+}
+
+.sectionTitle {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.formCard {
+  border-radius: 12px;
+  border: 1px solid var(--border-light, #e8e8e8);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.formCardContent {
+  padding: 1rem 1.25rem !important;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.input {
+  background: var(--bg-input, #fafafa);
+}
+
+.submitBtn {
+  align-self: flex-start;
+  border-radius: 8px;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.editLabel {
+  margin-bottom: 0.5rem;
+  display: block;
+  color: var(--text-secondary, #666);
+}
+
+.editActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.loaderWrap {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty {
+  padding: 1.5rem;
+  text-align: center;
+  background: var(--bg-light, #f5f5f5);
+  border-radius: 12px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.list > li {
+  margin: 0;
+}
