@@ -26,7 +26,7 @@ const DialogOpened: FC = () => {
     (state: RootState) => state.dialogs.messagesList
   );
   const currentDialog = dialogs.find((dialog) => dialog.id === id);
-  const friendAvatar = currentDialog?.photos?.small;
+  const friendAvatar = currentDialog?.photos?.small ?? undefined;
   const { userName, lastUserActivityDate } = currentDialog || {};
 
   useEffect(() => {

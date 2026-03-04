@@ -49,7 +49,7 @@ const DialogTitle: FC<Props> = ({ dialog, openDialog, title, isLast }) => {
       >
         <ListItem alignItems="flex-start">
           <ListItemAvatar>
-            <Avatar alt={userName} src={photos?.small} />
+            <Avatar alt={userName} src={photos?.small ?? undefined} />
           </ListItemAvatar>
           <ListItemText
             primary={userName}
@@ -59,7 +59,7 @@ const DialogTitle: FC<Props> = ({ dialog, openDialog, title, isLast }) => {
           <ListItemIcon className={classes.iconWrapper}>
             <div className={classes.top}>
               <span className={classes.date}>
-                {convertDate(lastDialogActivityDate)}
+                {lastDialogActivityDate && convertDate(lastDialogActivityDate)}
               </span>
               <MoreHorizIcon onClick={openMenu} className={classes.icon} />
             </div>

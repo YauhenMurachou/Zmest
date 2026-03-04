@@ -44,23 +44,34 @@ type ContactsType = {
 
 export type Dialog = {
   id: number;
+  userId: number;
   userName: string;
-  hasNewMessages: boolean;
-  lastDialogActivityDate: string;
-  lastUserActivityDate: string;
-  newMessagesCount: number;
-  photos: { small: string; large: string } | null;
+  lastMessage?: string;
+  lastMessageAddedAt?: string;
+  newMessages: number;
+  // Backward compatibility fields (optional)
+  hasNewMessages?: boolean;
+  lastDialogActivityDate?: string;
+  lastUserActivityDate?: string;
+  newMessagesCount?: number;
+  photos: {
+    small: string | null | undefined;
+    large: string | null | undefined;
+  };
 };
 
 export type MessageType = {
-  id: string;
+  id: number;
   body: string;
-  translatedBody: string | null;
   addedAt: string;
   senderId: number;
-  senderName: string;
   recipientId: number;
   viewed: boolean;
+  spam?: boolean;
+  deletedBy?: boolean;
+  // Backward compatibility fields (optional)
+  senderName?: string;
+  translatedBody?: string | null;
 };
 
 export type MessagesListType = {

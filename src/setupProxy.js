@@ -5,11 +5,7 @@ module.exports = function (app) {
   // Note: In Create React App, environment variables must start with REACT_APP_
   const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
 
-  console.log('Proxy configured222: /api →', backendUrl);
-  console.log(
-    'Proxy configured: /profile, /users, /follow, /security →',
-    backendUrl
-  );
+  console.log('Proxy configured: /api →', backendUrl);
 
   app.use(
     ['/profile', '/users', '/follow', '/security'],
@@ -21,7 +17,33 @@ module.exports = function (app) {
       onProxyReq: (proxyReq, req, res) => {
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            'Proxying new sds:',
+            'Proxying:',
+            req.method,
+            req.url,
+            '→',
+            `${backendUrl}${req.url}`
+          );
+        }
+      },
+      onError: (err, req, res) => {
+        console.error('Proxy error:', err.message);
+        console.error('Make sure your backend is running at:', backendUrl);
+      },
+    })
+  );
+
+  // Proxy dialogs requests to backend (no /api prefix)
+  app.use(
+    '/dialogs',
+    createProxyMiddleware({
+      target: backendUrl,
+      changeOrigin: true,
+      secure: false,
+      logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'warn',
+      onProxyReq: (proxyReq, req, res) => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(
+            'Proxying dialogs:',
             req.method,
             req.url,
             '→',
@@ -48,7 +70,7 @@ module.exports = function (app) {
         // Log proxied requests in development
         if (process.env.NODE_ENV === 'development') {
           console.log(
-            'Proxying1223434:',
+            'Proxying:',
             req.method,
             req.url,
             '→',
