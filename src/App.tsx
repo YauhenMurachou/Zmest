@@ -1,6 +1,7 @@
-import { FC, lazy, Suspense, useEffect } from 'react';
+import { FC, Suspense, lazy, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Route, Switch, useLocation } from 'react-router-dom';
+
 import CorseError from 'src/components/common/atoms/corseError/CorseError';
 import Loader from 'src/components/common/atoms/loader/Loader';
 import DialogOpened from 'src/components/dialogs/dialogOpened/DialogOpened';
@@ -16,9 +17,13 @@ import styles from './App.module.css';
 
 const Header = lazy(() => import('./components/header/Header'));
 const Navbar = lazy(() => import('./components/navbar/Navbar'));
-const ProfileContainer = lazy(() => import('./components/profile/ProfileContainer'));
+const ProfileContainer = lazy(
+  () => import('./components/profile/ProfileContainer')
+);
 const Dialogs = lazy(() => import('./components/dialogs/Dialogs'));
-const StartPage = lazy(() => import('./components/common/atoms/startPage/StartPage'));
+const StartPage = lazy(
+  () => import('./components/common/atoms/startPage/StartPage')
+);
 const Photos = lazy(() => import('./components/photos/Photos'));
 const Settings = lazy(() => import('./components/settings/Settings'));
 const UsersContainer = lazy(() => import('./components/users/UsersContainer'));
@@ -31,9 +36,7 @@ const AppLayout: FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className={styles.appWrapper}>
     <Header />
     <Navbar />
-    <div className={styles.appWrapperContent}>
-      {children}
-    </div>
+    <div className={styles.appWrapperContent}>{children}</div>
   </div>
 );
 
@@ -94,7 +97,9 @@ const App: FC = () => {
         </Suspense>
       )}
 
-      {!isInitialized && !isCorseError && <Loader isFetching={!isInitialized} />}
+      {!isInitialized && !isCorseError && (
+        <Loader isFetching={!isInitialized} />
+      )}
       {!isInitialized && isCorseError && <CorseError />}
     </MaterialProvider>
   );
