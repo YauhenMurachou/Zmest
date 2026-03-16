@@ -4,7 +4,7 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import NotificationsOffOutlinedIcon from '@mui/icons-material/NotificationsOffOutlined';
 import { Tooltip } from '@mui/material';
 import classNames from 'classnames';
-import { FC, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import ChangeLanguage from 'src/components/common/molecules/changeLanguage/ChangeLanguage';
@@ -14,33 +14,40 @@ import classes from './HeaderNotifications.module.css';
 const HeaderNotifications: FC = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isOffNotifications, setIsOffNotifications] = useState(false);
-
-  // useEffect(() => {
-  //   const isMuted = JSON.parse(localStorage.getItem('isMuted') || '[]');
-  //   setIsMuted(isMuted);
-  // }, [isMuted]);
-
-  // useEffect(() => {
-  //   const isOffNotifications = JSON.parse(
-  //     localStorage.getItem('isOffNotifications') || '[]'
-  //   );
-  //   setIsOffNotifications(isOffNotifications);
-  // }, [isOffNotifications]);
-
   const { t } = useTranslation();
 
-  const handleMute = () => {
-    setIsMuted(!isMuted);
-    localStorage.setItem('isMuted', JSON.stringify(!isMuted));
-  };
+  // Load from localStorage on mount only (no loop deps)
+  useEffect(() => {
+    try {
+      const muted = localStorage.getItem('isMuted');
+      if (muted !== null) {
+        setIsMuted(JSON.parse(muted));
+      }
+    } catch {
+      // Ignore parse errors
+    }
 
-  const handleOffNotifications = () => {
-    setIsOffNotifications(!isOffNotifications);
-    localStorage.setItem(
-      'isOffNotifications',
-      JSON.stringify(!isOffNotifications)
-    );
-  };
+    try {
+      const notifications = localStorage.getItem('isOffNotifications');
+      if (notifications !== null) {
+        setIsOffNotifications(JSON.parse(notifications));
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []); // Empty deps - load once
+
+  const handleMute = useCallback(() => {
+    const newValue = !isMuted;
+    setIsMuted(newValue);
+    localStorage.setItem('isMuted', JSON.stringify(newValue));
+  }, [isMuted]);
+
+  const handleOffNotifications = useCallback(() => {
+    const newValue = !isOffNotifications;
+    setIsOffNotifications(newValue);
+    localStorage.setItem('isOffNotifications', JSON.stringify(newValue));
+  }, [isOffNotifications]);
 
   return (
     <>

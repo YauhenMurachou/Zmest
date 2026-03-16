@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  postsApi,
   CreatePostParams,
-  UpdatePostParams,
   GetPostsParams,
+  UpdatePostParams,
+  postsApi,
 } from 'src/api/postsApi';
 import { queryKeys } from 'src/lib/react-query/queryKeys';
 
@@ -39,7 +39,10 @@ export const usePost = (id: number) =>
  * Get posts by author
  * GET /api/posts/author/:authorId?limit=50&offset=0
  */
-export const usePostsByAuthor = (authorId: number, params: GetPostsParams = {}) =>
+export const usePostsByAuthor = (
+  authorId: number,
+  params: GetPostsParams = {}
+) =>
   useQuery({
     queryKey: queryKeys.posts.byAuthor(authorId, params),
     queryFn: async () => {
@@ -62,12 +65,11 @@ export const useCreatePost = () => {
       const post = await postsApi.createPost(params);
       return post;
     },
-    onSuccess: (post) => {
-      // Invalidate posts lists to refetch updated data
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
-      // Invalidate author's posts
+    onSuccess: () => {
+      // Invalidate all posts queries (covers lists with/without params, byAuthor with/without params)
       queryClient.invalidateQueries({
-        queryKey: queryKeys.posts.byAuthor(post.authorId),
+        queryKey: queryKeys.posts.all,
+        predicate: (query) => query.queryKey[0] === 'posts',
       });
     },
   });
@@ -82,20 +84,25 @@ export const useUpdatePost = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, params }: { id: number; params: UpdatePostParams }) => {
+    mutationFn: async ({
+      id,
+      params,
+    }: {
+      id: number;
+      params: UpdatePostParams;
+    }) => {
       const post = await postsApi.updatePost(id, params);
       return post;
     },
     onSuccess: (post) => {
-      // Invalidate the specific post
+      // Invalidate the specific post detail
       queryClient.invalidateQueries({
         queryKey: queryKeys.posts.detail(post.id),
       });
-      // Invalidate posts lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
-      // Invalidate author's posts
+      // Invalidate all posts queries (covers lists with/without params, byAuthor with/without params)
       queryClient.invalidateQueries({
-        queryKey: queryKeys.posts.byAuthor(post.authorId),
+        queryKey: queryKeys.posts.all,
+        predicate: (query) => query.queryKey[0] === 'posts',
       });
     },
   });
@@ -114,14 +121,13 @@ export const useDeletePost = () => {
       await postsApi.deletePost(id);
       return { id, authorId };
     },
-    onSuccess: ({ id, authorId }) => {
+    onSuccess: ({ id }) => {
       // Remove the post from cache
       queryClient.removeQueries({ queryKey: queryKeys.posts.detail(id) });
-      // Invalidate posts lists
-      queryClient.invalidateQueries({ queryKey: queryKeys.posts.lists() });
-      // Invalidate author's posts
+      // Invalidate all posts queries (covers lists with/without params, byAuthor with/without params)
       queryClient.invalidateQueries({
-        queryKey: queryKeys.posts.byAuthor(authorId),
+        queryKey: queryKeys.posts.all,
+        predicate: (query) => query.queryKey[0] === 'posts',
       });
     },
   });

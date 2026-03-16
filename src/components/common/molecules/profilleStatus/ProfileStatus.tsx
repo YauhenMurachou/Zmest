@@ -1,6 +1,13 @@
 import { Tooltip } from '@mui/material';
 import TextField from '@mui/material/TextField';
-import { ChangeEvent, Component, MouseEventHandler } from 'react';
+import {
+  ChangeEvent,
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import i18n from 'src/i18n';
 
@@ -12,96 +19,102 @@ type Props = {
   isOwner: boolean;
 };
 
-class ProfileStatus extends Component<Props> {
-  state = {
-    editMode: false,
-    status: this.props.status,
-  };
+const ProfileStatus = ({
+  status: propsStatus,
+  updateStatus,
+  isOwner,
+}: Props) => {
+  const [editMode, setEditMode] = useState(false);
+  const [localStatus, setLocalStatus] = useState(propsStatus);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  activeEditMode = () => {
-    this.setState({
-      editMode: true,
-    });
-  };
-
-  timer = setTimeout(() => {
-    this.setState({
-      editMode: false,
-    });
-  }, 200);
-
-  deActiveEditMode = () => this.timer;
-
-  handleBlurStatus = () => {
-    const { status, updateStatus } = this.props;
-
-    if (updateStatus && this.state.status.trim() !== status) {
-      updateStatus(this.state.status.trim());
-      this.deActiveEditMode();
-    } else {
-      this.setState({
-        editMode: false,
-      });
+  useEffect(() => {
+    if (!editMode) {
+      setLocalStatus(propsStatus);
     }
-  };
+  }, [propsStatus, editMode]);
 
-  onStatusChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const currentTarget = e.currentTarget as HTMLInputElement;
-    this.setState({ status: currentTarget.value });
-  };
-
-  componentDidUpdate(prevProps: { status: string }) {
-    const { status } = this.props;
-    if (prevProps.status !== status) {
-      this.setState({ status });
+  const activateEditMode = useCallback(() => {
+    setEditMode(true);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
-  }
+    timerRef.current = setTimeout(() => {
+      setEditMode(false);
+    }, 3000);
+  }, []);
 
-  componentWillUnmount() {
-    clearTimeout(this.timer);
-  }
+  const deactivateEditMode = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setEditMode(false);
+  }, []);
+  useEffect(
+    () => () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    },
+    []
+  );
 
-  render() {
-    const { status, isOwner } = this.props;
-    return (
-      <>
-        <div className={styles.subtitle}>{i18n.t('status.status')}</div>
-        {!this.state.editMode && (
-          <Tooltip
-            title={isOwner ? (i18n.t('status.click') as string) : ''}
-            arrow
-            placement="bottom"
+  const handleBlurStatus = useCallback(() => {
+    const trimmedStatus = localStatus.trim();
+    if (updateStatus && trimmedStatus !== propsStatus) {
+      updateStatus(trimmedStatus);
+    }
+    deactivateEditMode();
+  }, [localStatus, propsStatus, updateStatus, deactivateEditMode]);
+
+  const onStatusChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    setLocalStatus(e.target.value);
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleBlurStatus();
+      }
+    },
+    [handleBlurStatus]
+  );
+
+  return (
+    <>
+      <div className={styles.subtitle}>{i18n.t('status.status')}</div>
+      {!editMode ? (
+        <Tooltip
+          title={isOwner ? (i18n.t('status.click') as string) : ''}
+          arrow
+          placement="bottom"
+        >
+          <span
+            onClick={
+              isOwner
+                ? (activateEditMode as MouseEventHandler<HTMLSpanElement>)
+                : undefined
+            }
+            role="button"
+            className={isOwner ? styles.status : undefined}
           >
-            <span
-              onClick={
-                isOwner
-                  ? (this.activeEditMode as MouseEventHandler<HTMLSpanElement>)
-                  : undefined
-              }
-              role="button"
-              className={isOwner ? styles.status : undefined}
-            >
-              {status ?? '...'}
-            </span>
-          </Tooltip>
-        )}
-        {isOwner && (this.state.editMode || !status) && (
-          <TextField
-            onBlur={this.handleBlurStatus}
-            onChange={this.onStatusChange}
-            value={this.state.status}
-            autoFocus
-            variant="standard"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                this.handleBlurStatus();
-              }
-            }}
-          />
-        )}
-      </>
-    );
-  }
-}
+            {propsStatus ?? '...'}
+          </span>
+        </Tooltip>
+      ) : null}
+      {isOwner && (editMode || !propsStatus) && (
+        <TextField
+          onBlur={handleBlurStatus}
+          onChange={onStatusChange}
+          value={localStatus}
+          autoFocus
+          variant="standard"
+          onKeyDown={handleKeyDown}
+        />
+      )}
+    </>
+  );
+};
 
 export default ProfileStatus;

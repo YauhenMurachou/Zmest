@@ -1,34 +1,37 @@
 import LanguageIcon from '@mui/icons-material/Language';
 import { Button, Popover, Tooltip } from '@mui/material';
-import { FC, MouseEvent, useState } from 'react';
+import React, { FC, MouseEvent, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import classes from './ChangeLanguage.module.css';
 
 import styles from 'src/components/common/molecules/changeAvatar/ChangeAvatar.module.css';
 
-const ChangeLanguage: FC = () => {
+const ChangeLanguage: FC = React.memo(() => {
   const [anchorEl, setAnchorEl] = useState<(EventTarget & HTMLElement) | null>(
     null
   );
   const [open, setOpen] = useState(false);
   const { t, i18n } = useTranslation();
 
-  const handleOpen = (e: MouseEvent<HTMLLabelElement>) => {
+  const handleOpen = useCallback((e: MouseEvent<HTMLLabelElement>) => {
     e.preventDefault();
     setAnchorEl(e.currentTarget);
-    setOpen((prevState) => !prevState);
-  };
+    setOpen((prev) => !prev);
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setAnchorEl(null);
     setOpen(false);
-  };
+  }, []);
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    handleClose();
-  };
+  const changeLanguage = useCallback(
+    (lng: string) => {
+      i18n.changeLanguage(lng);
+      handleClose();
+    },
+    [i18n, handleClose]
+  );
 
   return (
     <>
@@ -67,6 +70,6 @@ const ChangeLanguage: FC = () => {
       </Popover>
     </>
   );
-};
+});
 
 export default ChangeLanguage;

@@ -48,10 +48,10 @@ const ProfileInfoContainer: FC<Props> = ({
   const users = useSelector((state: RootState) => state.users.users);
 
   useEffect(() => {
-    !isOwner &&
-      profile?.userId &&
+    if (!isOwner && profile?.userId) {
       dispatch(getUsersThunkCreator(1, 30, profile.fullName));
-  }, [profile]); //eslint-disable-line
+    }
+  }, [dispatch, isOwner, profile?.userId, profile?.fullName]);
 
   const handleDialogOpen = () => {
     setDialogOpen((prevState) => !prevState);

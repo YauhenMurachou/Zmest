@@ -1,12 +1,13 @@
 import { FC, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import LoginAside from 'src/components/common/organisms/loginAside/LoginAside';
 import LoginForm from 'src/components/login/LoginForm';
 import RegisterForm from 'src/components/login/RegisterForm';
 import { useAuth } from 'src/lib/react-query/hooks';
+import { setUserDataThunkCreator } from 'src/redux/authReducer';
 import { RootState } from 'src/redux/redux-store';
 
 import styles from './Login.module.css';
@@ -21,21 +22,21 @@ const Login: FC = () => {
   );
 
   // New backend: Check React Query auth state
-  const { data: authUser, isSuccess: isAuthQuerySuccess, refetch: refetchAuth } = useAuth();
+  const { data: authUser, isSuccess: isAuthQuerySuccess } = useAuth();
 
   const isAuthenticated = isAuthRedux || (isAuthQuerySuccess && !!authUser);
   const currentUserId = reduxUserId || authUser?.id;
   const profilePath = currentUserId ? `/Profile/${currentUserId}` : '/Profile';
 
+  const dispatch = useDispatch();
   const handleLoginSuccess = () => {
-    // Refetch auth data after successful login to get user info
-    refetchAuth();
+    // Sync Redux auth with RQ login success
+    dispatch(setUserDataThunkCreator());
   };
 
   const handleRegisterSuccess = () => {
-    // After successful registration, user is logged in via token
-    // Refetch auth data and switch to login mode
-    refetchAuth();
+    // Sync Redux auth with RQ register success (logs in via token)
+    dispatch(setUserDataThunkCreator());
     setIsRegisterMode(false);
   };
 
