@@ -1,10 +1,4 @@
-import {
-  ApiResponse,
-  Post,
-  PostsResponseData,
-  ResultCodeEnum,
-  instance2,
-} from 'src/api/api';
+import { Post, PostsResponseData, ResultCodeEnum, postsAPI } from 'src/api/api';
 
 export type CreatePostParams = {
   title: string;
@@ -25,13 +19,10 @@ export const postsApi = {
   /**
    * Get all posts with pagination
    * GET /api/posts?limit=50&offset=0
-   * Response: { resultCode: 0, messages: [], data: { posts: [...], total?: number } }
+   * Response: { resultCode: 0, messages: [], data: { posts: [...], limit, offset } }
    */
   async getPosts(params: GetPostsParams = {}): Promise<PostsResponseData> {
-    const { limit = 50, offset = 0 } = params;
-    const response = await instance2.get<ApiResponse<PostsResponseData>>(
-      `/posts?limit=${limit}&offset=${offset}`
-    );
+    const response = await postsAPI.getAllPosts(params.limit, params.offset);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to get posts');
     }
@@ -44,9 +35,7 @@ export const postsApi = {
    * Response: { resultCode: 0, messages: [], data: { post: Post } }
    */
   async getPostById(id: number): Promise<Post> {
-    const response = await instance2.get<ApiResponse<{ post: Post }>>(
-      `/posts/${id}`
-    );
+    const response = await postsAPI.getPostById(id);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to get post');
     }
@@ -55,17 +44,15 @@ export const postsApi = {
 
   /**
    * Get posts by author
-   * GET /api/posts/author/:authorId?limit=50&offset=0
-   * Response: { resultCode: 0, messages: [], data: { posts: [...], total?: number } }
+   * GET /api/posts/author/:authorId
+   * Response: { resultCode: 0, messages: [], data: { posts: [...] } }
    */
   async getPostsByAuthor(
     authorId: number,
     params: GetPostsParams = {}
   ): Promise<PostsResponseData> {
-    const { limit = 50, offset = 0 } = params;
-    const response = await instance2.get<ApiResponse<PostsResponseData>>(
-      `/posts/author/${authorId}?limit=${limit}&offset=${offset}`
-    );
+    const { limit, offset } = params;
+    const response = await postsAPI.getPostsByAuthor(authorId, limit, offset);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to get posts');
     }
@@ -79,10 +66,7 @@ export const postsApi = {
    * Response: { resultCode: 0, messages: [], data: { post: Post } }
    */
   async createPost(params: CreatePostParams): Promise<Post> {
-    const response = await instance2.post<ApiResponse<{ post: Post }>>(
-      '/posts',
-      params
-    );
+    const response = await postsAPI.createPost(params);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to create post');
     }
@@ -96,10 +80,7 @@ export const postsApi = {
    * Response: { resultCode: 0, messages: [], data: { post: Post } }
    */
   async updatePost(id: number, params: UpdatePostParams): Promise<Post> {
-    const response = await instance2.put<ApiResponse<{ post: Post }>>(
-      `/posts/${id}`,
-      params
-    );
+    const response = await postsAPI.updatePost(id, params);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to update post');
     }
@@ -113,9 +94,7 @@ export const postsApi = {
    * Response: { resultCode: 0, messages: [], data: {} }
    */
   async deletePost(id: number): Promise<void> {
-    const response = await instance2.delete<ApiResponse<Record<string, never>>>(
-      `/posts/${id}`
-    );
+    const response = await postsAPI.deletePost(id);
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       throw new Error(response.data.messages?.[0] || 'Failed to delete post');
     }

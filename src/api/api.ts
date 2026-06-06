@@ -1,88 +1,37 @@
 import axios, { AxiosError } from 'axios';
 
-// Backend API base URL - update this to match your deployed backend
+// Backend API base URL
 // In development, use relative path to leverage proxy (avoids CORS)
 // In production, use full URL
 const BACKEND_URL =
   process.env.NODE_ENV === 'development'
     ? '' // Use relative path in development (proxy will handle it)
     : process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 export enum ResultCodeEnum {
   Success = 0,
   Error = 1,
 }
 
-export const instance = axios.create({
-  withCredentials: true,
-  baseURL: 'https://social-network.samuraijs.com/api/1.0/',
-  headers: { 'API-KEY': 'dfa9082f-57f9-4359-8c49-339d0a7e601b3' },
-});
-
-export const instance2 = axios.create({
-  baseURL: BACKEND_URL ? `${BACKEND_URL}/api` : '/api', // Use relative path in dev (proxy), full URL in prod
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true, // Enable cookies if backend uses them for JWT
-});
-
-// Same as BACKEND_URL but for prod always full origin (dev uses '' for proxy)
-const LEGACY_BACKEND_ORIGIN =
-  process.env.NODE_ENV === 'development'
-    ? ''
-    : process.env.REACT_APP_API_URL || 'http://localhost:3000';
-
-export const legacyInstance = axios.create({
-  baseURL: LEGACY_BACKEND_ORIGIN,
+export const api = axios.create({
+  baseURL: BACKEND_URL ? `${BACKEND_URL}/api` : '/api',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
 });
 
-// Add JWT to requests for protected routes (profile updates, follow, etc.)
-legacyInstance.interceptors.request.use(
+// Request interceptor to add JWT token
+api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-legacyInstance.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      const currentPath = window.location.pathname;
-      if (currentPath !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Log the configured backend URL for debugging
-const apiBaseUrl = `${BACKEND_URL}/api`.replace(/\/\/api$/, '/api'); // Handle empty BACKEND_URL case
-console.log('Backend API URL configured:', apiBaseUrl || '/api (using proxy)');
-
-// Request interceptor to add JWT token to requests for new backend (instance2)
-instance2.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    // Log request URL for debugging
     if (process.env.NODE_ENV === 'development') {
       console.log('API Request:', {
         method: config.method?.toUpperCase(),
-        url: `${config.baseURL}${config.url}`,
-        fullUrl: config.url,
+        url: config.url,
         baseURL: config.baseURL,
       });
     }
@@ -91,19 +40,14 @@ instance2.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle errors and extract tokens for new backend (instance2)
-instance2.interceptors.response.use(
+// Response interceptor to handle errors and extract tokens
+api.interceptors.response.use(
   (response) => {
-    // Extract JWT token from response headers if present
-    // Backend may send token in Authorization header or custom header
     const authHeader =
       response.headers['authorization'] || response.headers['Authorization'];
-    const customHeader =
-      response.headers['x-auth-token'] || response.headers['X-Auth-Token'];
-    const token = authHeader || customHeader;
+    const token = authHeader;
 
     if (token) {
-      // Remove 'Bearer ' prefix if present
       const cleanToken =
         typeof token === 'string' && token.startsWith('Bearer ')
           ? token.substring(7)
@@ -112,29 +56,20 @@ instance2.interceptors.response.use(
         localStorage.setItem('token', cleanToken);
       }
     }
-    // Note: If backend uses cookies only, token will be automatically sent with requests
-    // via withCredentials: true, and we don't need to store it in localStorage
-
     return response;
   },
   (error: AxiosError) => {
-    // Log error details for debugging
     if (process.env.NODE_ENV === 'development') {
       console.error('API Error:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         url: error.config?.url,
-        baseURL: error.config?.baseURL,
-        fullUrl: `${error.config?.baseURL}${error.config?.url}`,
         data: error.response?.data,
       });
     }
 
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      // Unauthorized - clear token
       localStorage.removeItem('token');
-
-      // Avoid redirect loop: don't force navigation if already on the login page
       const currentPath = window.location.pathname;
       if (currentPath !== '/login') {
         window.location.href = '/login';
@@ -143,6 +78,11 @@ instance2.interceptors.response.use(
 
     return Promise.reject(error);
   }
+);
+
+console.log(
+  'Backend API URL configured:',
+  BACKEND_URL ? `${BACKEND_URL}/api` : '/api (using proxy)'
 );
 
 // Operation Result Object format - all backend responses follow this structure
@@ -158,7 +98,13 @@ export type ApiError = {
   error?: string;
 };
 
-// Register response data
+// Auth Types
+export type RegisterRequestData = {
+  email: string;
+  username: string;
+  password: string;
+};
+
 export type RegisterResponseData = {
   user: {
     id: number;
@@ -169,28 +115,78 @@ export type RegisterResponseData = {
   };
 };
 
-// Login response data
-export type LoginResponseData = {
-  userId: number;
-  token?: string; // JWT token, if backend includes it in body
+export type LoginRequestData = {
+  email: string;
+  password: string;
+  rememberMe?: boolean;
 };
 
-// Get current user response data (note: uses "login" not "username")
+export type LoginResponseData = {
+  userId: number;
+  token?: string;
+};
+
 export type CurrentUserData = {
   id: number;
   email: string;
-  login: string; // Backend returns "login" not "username"
+  login: string;
 };
 
+// User Types
 export type User = {
   id: number;
-  email: string;
-  username?: string; // For compatibility
-  login?: string; // From backend
-  createdAt?: string;
-  updatedAt?: string;
+  name: string;
+  status?: string;
+  photos: {
+    small: string | null;
+    large: string | null;
+  };
+  followed: boolean;
+  email?: string;
+  username?: string;
+  login?: string;
 };
 
+export type UsersResponse = {
+  items: User[];
+  totalCount: number;
+  error: string | null;
+};
+
+// Profile Types
+export type ProfileContacts = {
+  facebook: string | null;
+  github: string | null;
+  instagram: string | null;
+  mainLink: string | null;
+  twitter: string | null;
+  vk: string | null;
+  website: string | null;
+  youtube: string | null;
+};
+
+export type Profile = {
+  aboutMe: string;
+  contacts: ProfileContacts;
+  lookingForAJob: boolean;
+  lookingForAJobDescription: string;
+  fullName: string;
+  userId: number;
+  photos: {
+    small: string | null;
+    large: string | null;
+  };
+};
+
+export type UpdateProfileRequestData = {
+  aboutMe?: string;
+  contacts?: ProfileContacts;
+  lookingForAJob?: boolean;
+  lookingForAJobDescription?: string;
+  fullName?: string;
+};
+
+// Post Types
 export type Post = {
   id: number;
   title: string;
@@ -201,8 +197,198 @@ export type Post = {
   updatedAt?: string;
 };
 
-// Posts response data
+export type CreatePostRequestData = {
+  title: string;
+  content: string;
+};
+
+export type UpdatePostRequestData = {
+  title?: string;
+  content?: string;
+};
+
 export type PostsResponseData = {
   posts: Post[];
-  total?: number;
+  limit?: number;
+  offset?: number;
+};
+
+export type PostResponseData = {
+  post: Post;
+};
+
+// Dialog Types
+export type Dialog = {
+  id: number;
+  userId: number;
+  userName: string;
+  lastMessage: string;
+  lastMessageAddedAt: string;
+  newMessages: number;
+  photos: {
+    small: string | null;
+    large: string | null;
+  };
+};
+
+export type DialogsResponseData = {
+  items: Dialog[];
+  totalCount: number;
+};
+
+export type Message = {
+  id: number;
+  body: string;
+  senderId: number;
+  recipientId: number;
+  addedAt: string;
+  viewed: boolean;
+  spam: boolean;
+  deletedBy: boolean;
+};
+
+export type MessagesResponseData = {
+  items: Message[];
+  totalCount: number;
+};
+
+export type SendMessageRequestData = {
+  body: string;
+};
+
+export type MessageViewedStatus = {
+  messageId: number;
+  viewed: boolean;
+};
+
+export type NewMessagesCount = {
+  userId: number;
+  newMessages: number;
+};
+
+export type NewMessagesCountResponseData = {
+  items: NewMessagesCount[];
+};
+
+// Captcha Type
+export type CaptchaResponseData = {
+  url: string;
+};
+
+// ==================== API Functions ====================
+
+// Auth API
+export const authAPI = {
+  register: (data: RegisterRequestData) =>
+    api.post<ApiResponse<RegisterResponseData>>('/auth/register', data),
+
+  login: (data: LoginRequestData) =>
+    api.post<ApiResponse<LoginResponseData>>('/auth/login', data),
+
+  logout: () => api.post<ApiResponse<{}>>('/auth/logout'),
+
+  me: () => api.get<ApiResponse<CurrentUserData>>('/auth/me'),
+};
+
+// Users API
+export const usersAPI = {
+  getUsers: (page = 1, count = 10, term = '') =>
+    api.get<UsersResponse>(`/users?page=${page}&count=${count}&term=${term}`),
+};
+
+// Profile API
+export const profileAPI = {
+  getProfile: (userId: number) => api.get<Profile>(`/profile/${userId}`),
+
+  getStatus: (userId: number) => api.get<string>(`/profile/status/${userId}`),
+
+  updateStatus: (status: string) =>
+    api.put<ApiResponse<{}>>('/profile/status', { status }),
+
+  updateProfile: (data: UpdateProfileRequestData) =>
+    api.put<ApiResponse<{}>>('/profile', data),
+};
+
+// Follow API
+export const followAPI = {
+  checkFollow: (userId: number) => api.get<boolean>(`/follow/${userId}`),
+
+  follow: (userId: number) => api.post<ApiResponse<{}>>(`/follow/${userId}`),
+
+  unfollow: (userId: number) =>
+    api.delete<ApiResponse<{}>>(`/follow/${userId}`),
+};
+
+// Posts API
+export const postsAPI = {
+  createPost: (data: CreatePostRequestData) =>
+    api.post<ApiResponse<PostResponseData>>('/posts', data),
+
+  getAllPosts: (limit?: number, offset?: number) =>
+    api.get<ApiResponse<PostsResponseData>>('/posts', {
+      params: { limit, offset },
+    }),
+
+  getPostById: (postId: number) =>
+    api.get<ApiResponse<PostResponseData>>(`/posts/${postId}`),
+
+  getPostsByAuthor: (authorId: number, limit?: number, offset?: number) =>
+    api.get<ApiResponse<PostsResponseData>>(`/posts/author/${authorId}`, {
+      params: { limit, offset },
+    }),
+
+  updatePost: (postId: number, data: UpdatePostRequestData) =>
+    api.put<ApiResponse<PostResponseData>>(`/posts/${postId}`, data),
+
+  deletePost: (postId: number) =>
+    api.delete<ApiResponse<{}>>(`/posts/${postId}`),
+};
+
+// Security API
+export const securityAPI = {
+  getCaptchaUrl: () =>
+    api.get<ApiResponse<CaptchaResponseData>>('/security/get-captcha-url'),
+};
+
+// Dialogs API
+export const dialogsAPI = {
+  startDialog: (userId: number) =>
+    api.put<ApiResponse<{ id: number; userId: number }>>(`/dialogs/${userId}`),
+
+  getAllDialogs: () => api.get<ApiResponse<DialogsResponseData>>('/dialogs'),
+
+  getMessages: (userId: number, page = 1, count = 10) =>
+    api.get<ApiResponse<MessagesResponseData>>(`/dialogs/${userId}/messages`, {
+      params: { page, count },
+    }),
+
+  sendMessage: (userId: number, data: SendMessageRequestData) =>
+    api.post<ApiResponse<Message>>(`/dialogs/${userId}/messages`, data),
+
+  getMessageViewedStatus: (messageId: number) =>
+    api.get<ApiResponse<MessageViewedStatus>>(
+      `/dialogs/messages/${messageId}/viewed`
+    ),
+
+  markAsSpam: (messageId: number) =>
+    api.post<ApiResponse<{}>>(`/dialogs/messages/${messageId}/spam`),
+
+  deleteMessage: (messageId: number) =>
+    api.delete<ApiResponse<{}>>(`/dialogs/messages/${messageId}`),
+
+  restoreMessage: (messageId: number) =>
+    api.put<ApiResponse<{}>>(`/dialogs/messages/${messageId}/restore`),
+
+  getNewMessages: (userId: number, newerThen: string) =>
+    api.get<ApiResponse<MessagesResponseData>>(
+      `/dialogs/${userId}/messages/new`,
+      {
+        params: { newerThen },
+      }
+    ),
+
+  getNewMessagesCount: () =>
+    api.get<ApiResponse<NewMessagesCountResponseData>>(
+      '/dialogs/messages/new/count'
+    ),
 };
