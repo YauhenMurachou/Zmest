@@ -7,7 +7,7 @@ import {
   RegisterResponseData,
   ResultCodeEnum,
   User,
-  instance2,
+  api,
 } from 'src/api/api';
 
 const TOKEN_KEY = 'token';
@@ -23,9 +23,7 @@ const saveTokenFromResponse = (response: AxiosResponse): void => {
   // 2. Fallback: token in Authorization or X-Auth-Token header
   const authHeader =
     response.headers?.['authorization'] ?? response.headers?.['Authorization'];
-  const customHeader =
-    response.headers?.['x-auth-token'] ?? response.headers?.['X-Auth-Token'];
-  const headerToken = authHeader || customHeader;
+  const headerToken = authHeader;
   if (headerToken && typeof headerToken === 'string') {
     const token = headerToken.startsWith('Bearer ')
       ? headerToken.slice(7)
@@ -54,7 +52,7 @@ export const authApi = {
    * Token is saved from body or header for subsequent /auth/me requests.
    */
   async register(params: RegisterParams): Promise<RegisterResponseData> {
-    const response = await instance2.post<ApiResponse<RegisterResponseData>>(
+    const response = await api.post<ApiResponse<RegisterResponseData>>(
       '/auth/register',
       params
     );
@@ -75,7 +73,7 @@ export const authApi = {
    * Token is saved from body or Authorization header for subsequent /auth/me requests.
    */
   async login(params: LoginParams): Promise<LoginResponseData> {
-    const response = await instance2.post<ApiResponse<LoginResponseData>>(
+    const response = await api.post<ApiResponse<LoginResponseData>>(
       '/auth/login',
       params
     );
@@ -98,7 +96,7 @@ export const authApi = {
    */
   async logout(): Promise<void> {
     try {
-      await instance2.post<ApiResponse<Record<string, never>>>('/auth/logout');
+      await api.post<ApiResponse<Record<string, never>>>('/auth/logout');
     } catch (error) {
       // Even if logout fails on server, clear token locally
       console.error('Logout error:', error);
@@ -114,9 +112,7 @@ export const authApi = {
    * Response: { resultCode: 0, messages: [], data: { id, email, login } }
    */
   async getCurrentUser(): Promise<User> {
-    const response = await instance2.get<ApiResponse<CurrentUserData>>(
-      '/auth/me'
-    );
+    const response = await api.get<ApiResponse<CurrentUserData>>('/auth/me');
 
     if (response.data.resultCode !== ResultCodeEnum.Success) {
       const errorMessage = response.data.messages?.[0] || 'Failed to get user';
@@ -126,9 +122,15 @@ export const authApi = {
     const userData = response.data.data;
     return {
       id: userData.id,
+      name: userData.login,
       email: userData.email,
       username: userData.login,
       login: userData.login,
+      photos: {
+        small: null,
+        large: null,
+      },
+      followed: false,
     };
   },
 };

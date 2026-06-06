@@ -6,7 +6,7 @@ export type UserType = {
   id: number;
   name: string;
   status: string;
-  photos: { small: string; large: string };
+  photos: { small: string | null; large: string | null };
   followed: boolean;
   city?: boolean;
   country?: boolean;
@@ -22,24 +22,24 @@ export type FriendsType = {
 export type ProfileType = {
   userId: number | null;
   lookingForAJob: boolean;
-  lookingForAJobDescription: boolean;
+  lookingForAJobDescription: string;
   fullName: string;
   aboutMe: string;
   contacts: ContactsType;
-  photos: { small: string; large: string } | null;
+  photos: { small: string | null; large: string | null } | null;
 };
 
 export type EditProfileType = Omit<ProfileType, 'userId' | 'photos'>;
 
 type ContactsType = {
-  github: string;
-  vk: string;
-  facebook: string;
-  instagram: string;
-  twitter: string;
-  website: string;
-  youtube: string;
-  mainLink: string;
+  github: string | null;
+  vk: string | null;
+  facebook: string | null;
+  instagram: string | null;
+  twitter: string | null;
+  website: string | null;
+  youtube: string | null;
+  mainLink: string | null;
 };
 
 export type Dialog = {

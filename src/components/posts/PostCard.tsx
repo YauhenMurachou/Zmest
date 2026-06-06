@@ -61,7 +61,10 @@ export const PostCard: FC<PostCardProps> = ({
         )}
       </Box>
       <Typography variant="caption" className={styles.meta}>
-        {post.author?.login ?? post.author?.username ?? `User #${post.authorId}`}
+        {post.author?.name ??
+          post.author?.username ??
+          post.author?.login ??
+          `User #${post.authorId}`}
         {' · '}
         {formatPostDate(post.createdAt)}
       </Typography>

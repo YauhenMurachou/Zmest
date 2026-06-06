@@ -50,7 +50,7 @@ export const authActions = {
       type: SET_CAPTCHA_URL,
       data: { captchaImageUrl },
     } as const),
-  setAvatarActionCreator: (ownerAvatar: string) =>
+  setAvatarActionCreator: (ownerAvatar: string | null) =>
     ({
       type: SET_OWNER_AVATAR,
       data: { ownerAvatar },
