@@ -51,10 +51,9 @@ const SettingsForm: FC<Props> = ({
                   component={TextField}
                   variant="standard"
                   helperText={t('settings.fullName')}
-                  disabled
                 />
               </div>
-              {info.map((item) => {
+              {info.map((item, index) => {
                 if (exceptions.includes(item)) {
                   return undefined;
                 } else if (
@@ -80,7 +79,7 @@ const SettingsForm: FC<Props> = ({
                     <div className={classes.property}>
                       <Field
                         name={item}
-                        key={uuidv4()}
+                        key={index}
                         id={item}
                         component={TextField}
                         variant="standard"
